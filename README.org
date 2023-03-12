@@ -75,5 +75,45 @@ tier 1 capital for held-to-maturity assets) and then print the data:
 }
 #+END_SRC
 
+You can find a list of the UBPR codes at the [[https://www.federalreserve.gov/apps/mdrm/data-dictionary/search/series?sid=1388&show_short_title=False&show_conf=False&rep_status=All&rep_state=Opened&rep_period=Before&date_start=20160912&date_end=20160912][Federal Reserve]]. For
+example if you are interested in both =UBPRE569= (unrealized losses on
+the held-to-maturity portfolio as percent of tier 1 capital) as well
+as =UBPRM037= (appreciation in available for sale securities / percent
+of available for sale securities), you could do something like the
+following:
+
+#+BEGIN_SRC python
+>>> codes = {
+...    'UBPRE569': {'convert': float},
+...    'UBPRM037': {'convert': float},
+... }
+>>> ubpr_data = ftool.get_ubpr_inst_data(rssd_filter={
+...     i['FED_RSSD'] for i in inst_data[:50]}, codes=codes)
+>>> htm_data = list(sorted(ubpr_data, key=lambda i: i['UBPRE569']))
+>>> print(json.dumps({i['NAME']: {n: i[n] for n in (['NAME']+list(codes))}
+...      for i in htm_data[:3]}, indent=2))
+{
+  "Silicon Valley Bank": {
+    "NAME": "Silicon Valley Bank",
+    "UBPRE569": -89.2,
+    "UBPRM037": -8.86
+  },
+  "Bank of America, National Association": {
+    "NAME": "Bank of America, National Association",
+    "UBPRE569": -59.95,
+    "UBPRM037": -2.0
+  },
+  "Charles Schwab Bank, SSB": {
+    "NAME": "Charles Schwab Bank, SSB",
+    "UBPRE569": -46.87,
+    "UBPRM037": -8.17
+  }
+}
+#+END_SRC
+
+
+
+            
+
 
 
