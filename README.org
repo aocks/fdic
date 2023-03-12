@@ -1,0 +1,79 @@
+
+* Introduction
+
+This project provides some tools to access data from the FDIC public
+API and data resources.
+
+Work in progress; more docs coming soon.
+
+* Usage
+
+To try out these tools, install via =pip install fdic= or download the
+source code from GitHub. Then start a python interpreter and do
+something like the following:
+
+First we import various modules and set ftool to be the tool we want:
+#+BEGIN_SRC python
+>>> import fdic.query, json
+>>> ftool = fdic.query.FDICTools
+#+END_SRC
+
+Now we can get the institutional data from the FDIC and sort it first
+by assets and then by deposits. We print the result in JSON format
+as a sanity check and see the largest 3 banks by assets:
+
+#+BEGIN_SRC python
+>>> inst_data = ftool.get_sorted_inst_data()
+>>> top_3_by_assets = inst_data[:3]
+>>> print(json.dumps({i['NAME']: {n: i[n] for n in ['ASSET', 'DEP']}
+...      for i in top_3_by_assets}, indent=2))
+{
+  "JPMorgan Chase Bank, National Association": {
+    "ASSET": "3201942000",
+    "DEP": "2440722000"
+  },
+  "Bank of America, National Association": {
+    "ASSET": "2418508000",
+    "DEP": "2042255000"
+  },
+  "Citibank, National Association": {
+    "ASSET": "1766752000",
+    "DEP": "1399631000"
+  }
+}
+#+END_SRC
+
+Next we pull in the Uniform Bank Performance Report data. Note that
+you will have to download a zip file with this data first. If you
+don't, you will get a NeedUBPRZipFile exception telling you how to
+download the necessary file.
+
+To save time in parsing, we can provide an rssd_filter to just
+get data for the top 200 banks by assets. After getting the data,
+we sort by the UBPRE569 field (unrealized losses as a percent of
+tier 1 capital for held-to-maturity assets) and then print the data:
+
+#+BEGIN_SRC python
+>>> ubpr_data = ftool.get_ubpr_inst_data(rssd_filter={
+...     i['FED_RSSD'] for i in inst_data[:50]})
+>>> htm_data = list(sorted(ubpr_data, key=lambda i: i['UBPRE569']))
+>>> print(json.dumps({i['NAME']: {n: i[n] for n in ['NAME', 'UBPRE569']}
+...      for i in htm_data[:3]}, indent=2))
+{
+  "Silicon Valley Bank": {
+    "NAME": "Silicon Valley Bank",
+    "UBPRE569": -89.2
+  },
+  "Bank of America, National Association": {
+    "NAME": "Bank of America, National Association",
+    "UBPRE569": -59.95
+  },
+  "Charles Schwab Bank, SSB": {
+    "NAME": "Charles Schwab Bank, SSB",
+    "UBPRE569": -46.87
+  }
+}
+#+END_SRC
+
+
+
